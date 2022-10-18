@@ -48,6 +48,25 @@ I think you'll agree it looks better with the colored LED.
 Especially for a project that will mimic the classic game of Simon.
 
 <div align="center" style="padding:0.5em 1.0em 1.0em 1.0em;">
-  <h2 style="margin:0 0 0.5em 0;adding:0;">Classic Simon Game</h2>
   <a href="https://en.wikipedia.org/wiki/Simon_(game)"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Simon_Electronic_Game.jpg/220px-Simon_Electronic_Game.jpg" style="width:50%;border:0.2em solid #000;background-color:#fff;padding:1.0em;"><br/>Wiki :arrow_upper_right:</a>
 </div>
+
+Now the adventure really begins. As stated, I ended up switching from a landscape layout for a portrait one.
+
+<div align="center" style="padding:0.5em 1.0em 1.0em 1.0em;">
+  <img src="https://github.com/norfanos/MiniSimon/blob/master/img/IMG_0038.png?raw=true" style="width:50%;border:0.2em solid #fff;">
+</div>
+
+I placed all the components and soldered the components together. I used gendered headers so I could remove the KB2040 for when I needed it on other projects. I then wired them all together by the seat of my pants. It's the first time I winged it like this, which I found made me check everything I did a few times against other learners and reference documents—measure twice, cut once being chanted in my head over and over.
+
+<div align="center" style="padding:0.5em 1.0em 1.0em 1.0em;">
+  <img src="https://github.com/norfanos/MiniSimon/blob/master/img/IMG_0039.png?raw=true" style="width:50%;border:0.2em solid #fff;">
+</div>
+
+I'll be adding a Fritzing of it so you can follow along. In the meantime here are some references I used to model the wiring after.
+
+
+#### References
+
+1. [Adafruit KB2040](https://www.adafruit.com/product/5302)
+2. [Adafruit Step Switch Party](https://learn.adafruit.com/step-switch-party?view=all)
