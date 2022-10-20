@@ -1,6 +1,6 @@
 import time
 import board
-import keypad
+import displayio
 import busio as io
 import pwmio
 from digitalio import Direction, DigitalInOut, Pull
@@ -13,6 +13,8 @@ import adafruit_framebuf
 import adafruit_ssd1306
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label
+from adafruit_display_shapes.rect import Rect
+
 
 # Set Pins
 PIEZO_PIN = board.D10
@@ -100,7 +102,7 @@ for simonPadLed in simonPadLeds: # Init Pad LEDs
     simonPadLed.direction = Direction.OUTPUT
     simonPadLed.value = False
 
-
+# ---
 
 def testBit(int_type, offset):
     mask = 1 << offset
@@ -121,6 +123,7 @@ def toggleBit(int_type, offset):
     mask = 1 << offset
     return(int_type ^ mask)
 
+# ---
 
 def playTone(frequency, volume=0xEFFF):
     global gameBuzzer
@@ -182,6 +185,7 @@ def playErrorRamp():
         stopTone()
         time.sleep(0.01)
 
+# ---
 
 def padLedOn(idx):
     global simonPadLeds
@@ -193,6 +197,7 @@ def padLedOff(idx):
 
     simonPadLeds[idx].value = False
 
+# ---
 
 def stopPad(idx):
     simonPadLeds[idx].value = False
@@ -223,6 +228,8 @@ def getSelectedPad():
 
     return False
 
+# ---
+
 #def convertStateToIdxList(state):
 
 def updatePadStates():
@@ -244,8 +251,10 @@ def processPlayStates(states):
             count = count + 1
             playTone(simonPadTones[idx])
             padLedOn(idx)
+            renderButtonOnScreen(idx)
         else:
             padLedOff(idx)
+            renderButtonOffScreen(idx)
 
     if states == 0 or count > 1: # STOP ALL TONES
         stopTone()
@@ -253,6 +262,7 @@ def processPlayStates(states):
     if count > 1:
         raise RuntimeError("Multiple pads pressed.")
 
+# ---
 
 def renderBlankScreen():
     global gameOled
@@ -280,9 +290,71 @@ def renderSelectScreen():
     gameOled.show()
 
 def renderPlayScreen():
+    global gameOled
+    global screenMinX
+    global screenMinY
+    global screenLineHeight
+
+    print("PLAY!")
+
+    gameOled.rect(0, 0, 32, screenLineHeight + 1, 0xFFFFFF, fill=0xFFFFFF)
+    gameOled.text('PLAY!', screenMinX, screenMinY + (0 * screenLineHeight), 0)
+    gameOled.show()
+
+def renderGameOverScreen():
+    global gameOled
+    global screenMinX
+    global screenMinY
+    global screenLineHeight
+
+    print("Game Over!")
+
+    gameOled.rect(0, 0, 32, screenLineHeight + 1, 0xFFFFFF, fill=0xFFFFFF)
+    gameOled.text('OVER!', screenMinX, screenMinY + (0 * screenLineHeight), 0)
+    gameOled.show()
+
+def renderButtonOffScreen(idx):
+    if (idx == 0): # GREEN
+        gameOled.rect(0, 13, 15, 15, 0x000000, fill=0xFFFFFF)
+    elif (idx == 1): # RED
+        gameOled.rect(17, 13, 32, 15, 0x000000, fill=0xFFFFFF)
+    elif (idx == 2): # YELLOW
+        gameOled.rect(0, 30, 15, 15, 0x000000, fill=0xFFFFFF)
+    elif (idx == 3): # BLUE
+        gameOled.rect(17, 30, 32, 15, 0x000000, fill=0xFFFFFF)
+
+    gameOled.show()
+
+def renderButtonOnScreen(idx):
+    if (idx == 0): # GREEN
+        gameOled.rect(0, 13, 15, 15, 0xFFFFFF, fill=0xFFFFFF)
+    elif (idx == 1): # RED
+        gameOled.rect(17, 13, 32, 15, 0xFFFFFF, fill=0xFFFFFF)
+    elif (idx == 2): # YELLOW
+        gameOled.rect(0, 30, 15, 15, 0xFFFFFF, fill=0xFFFFFF)
+    elif (idx == 3): # BLUE
+        gameOled.rect(17, 30, 32, 15, 0xFFFFFF, fill=0xFFFFFF)
+
+    gameOled.show()
+
+def renderLevelPointsScreen():
+    global gameOled
+    global screenMinX
+    global screenMinY
+    global screenLineHeight
+
     global gameLevel
+    global gameScore
+
+    #print("Level: {} | Score: {}".format(gameLevel, gameScore))
+
+    gameOled.rotation = 0 # (Landscape Mode)
+    gameOled.text('Lvl: {}'.format(gameLevel), screenMinX, screenMinY + (0 * screenLineHeight), 1)
+    gameOled.text('Pts: {}'.format(gameScore), screenMinX, screenMinY + (1 * screenLineHeight), 1)
+    gameOled.show()
+    gameOled.rotation = 1 # (Portait Mode)
     
-    
+# ---
             
 def getUserSkillLevel():
     global simonPadTones
@@ -296,12 +368,14 @@ def getUserSkillLevel():
             
     return selectedPad
 
-def playGameLevel():
+def playGameLevel(lvl = 1):
     global prevButtonStates
     global buttonStates
     global boardButton
     global gameButton
     global gameLevel
+    
+    gameLevel = lvl
     
     levelPlayList = buildLevelPlayList(gameLevel)
     print(levelPlayList)
@@ -315,7 +389,7 @@ def playGameLevel():
             print("Pad State: {}".format(buttonStates))
 
             processPlayStates(buttonStates)
-            
+
         if not boardButton.value or not gameButton.value:
             if not boardButton.value:
                 pixelBad()
@@ -324,6 +398,8 @@ def playGameLevel():
             else:
                 pixelOff()
                 endGame = True
+        
+        renderLevelPointsScreen()
 
 def finishedGameLevel(message):
     global prevButtonStates
@@ -332,7 +408,10 @@ def finishedGameLevel(message):
     global gameButton
     
     print(message)
+    
+    renderGameOverScreen()
     playErrorRamp()
+    
     time.sleep(0.5)
     
     endGame = False
@@ -347,19 +426,20 @@ def buildLevelPlayList(level):
     
     playlist = []
     for _ in range(notesPerLevel * level * skillLevel):
-        value = randint(0, 3)
-        playlist.append(value)
+        playlist.append(randint(0, 3))
 
     playFullRamp()
     return playlist
 
-
-
+# ---
+# ---
 
 while True:
     pixelOn = False
     
     gameLevel = 1
+    gameScore = 0
+    
     buttonStates = 0
     prevButtonStates = 0
     
@@ -373,6 +453,11 @@ while True:
     print("Skill Level: {}".format(skillLevel))
 
     pixelGood()
+    renderPlayScreen()
+    
+    for idx in range(0, 4):
+        renderButtonOffScreen(idx)
+
     try:
         playGameLevel()
     except Exception as err:
