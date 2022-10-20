@@ -19,14 +19,11 @@ PIEZO_PIN = board.D10
 
 # Define a list of tones/music notes to play.
 TONE_FREQ = [
-    262,  # C4
-    294,  # D4
-    330,  # E4
-    349,  # F4
-    392,  # G4
-    440,  # A4
-    494,  # B4
-    523 ] # C5
+    330, # E4
+    220, # A3
+    139, # C3#
+    165  # E3
+    ]
 
 ERROR_TONE_FREQ =[
     330,  # E4
@@ -35,6 +32,17 @@ ERROR_TONE_FREQ =[
     131,  # C3
     110   # A2
     ]
+    
+TONE_FREQ_ALT = [
+    262, # C4
+    294, # D4
+    330, # E4
+    349, # F4
+    392, # G4
+    440, # A4
+    494, # B4
+    523  # C5
+    ]
 
 # Set some default values
 screenMinX = 2
@@ -42,10 +50,19 @@ screenMinY = 2
 screenLineHeight = 10
 
 notesPerLevel = 4
+currentLevel = 1
+
+RED = (255, 0, 0, 0)
+YELLOW = (255, 150, 0, 0)
+GREEN = (0, 255, 0, 0)
+CYAN = (0, 255, 255, 0)
+BLUE = (0, 0, 255, 0)
+PURPLE = (180, 0, 255, 0)
+BLACK = (0, 0, 0, 0)
 
 
 # Board NEOPIXEL Init
-boardPixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
+boardPixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.15)
 
 # Board Button Init
 boardButton = DigitalInOut(board.BUTTON)
@@ -65,7 +82,7 @@ gameButton.switch_to_input(pull=Pull.UP)
 
 # Game Pad Tones
 simonPadTones = [
-    TONE_FREQ[0], TONE_FREQ[2], TONE_FREQ[4], TONE_FREQ[6]
+    TONE_FREQ[0], TONE_FREQ[1], TONE_FREQ[2], TONE_FREQ[3]
     ]
 
 # Game Pad Buttons
@@ -127,6 +144,17 @@ def playPlayList(playlist):
         stopTone()
         time.sleep(0.125)
 
+def playSelection(padIdx):
+    global simonPadTones
+
+    for i in range(1, 3):
+        playTone(simonPadTones[padIdx])
+        padLedOn(padIdx)
+        time.sleep(0.1)
+        stopTone()
+        padLedOff(padIdx)
+        time.sleep(0.05)
+
 def playRamp():
     global simonPadTones
 
@@ -172,19 +200,19 @@ def stopPad(idx):
 
 def pixelGood():
     pixelOn = True
-    boardPixel.fill((0, 255, 0))
+    boardPixel.fill(PURPLE)
 
 def pixelNotice():
     pixelOn = True
-    boardPixel.fill((255, 191, 0))
+    boardPixel.fill(CYAN)
 
 def pixelBad():
     pixelOn = True
-    boardPixel.fill((255, 0, 0))
+    boardPixel.fill(RED)
 
 def pixelOff():
     pixelOn = False
-    boardPixel.fill((0, 0, 0))
+    boardPixel.fill(BLACK)
 
 def getSelectedPad():
     global simonPadButtons
@@ -250,6 +278,11 @@ def renderSelectScreen():
     gameOled.text(' Y:3 ', screenMinX, screenMinY + (7 * screenLineHeight), 0)
     gameOled.text(' B:4 ', screenMinX, screenMinY + (8 * screenLineHeight), 0)
     gameOled.show()
+
+def renderPlayScreen():
+    global gameLevel
+    
+    
             
 def getUserSkillLevel():
     global simonPadTones
@@ -259,13 +292,7 @@ def getUserSkillLevel():
         padIdx = getSelectedPad()
         if padIdx is not False:
             selectedPad = padIdx + 1
-            for i in range(1, 3):
-                playTone(simonPadTones[padIdx])
-                padLedOn(padIdx)
-                time.sleep(0.1)
-                stopTone()
-                padLedOff(padIdx)
-                time.sleep(0.05)
+            playSelection(padIdx)
             
     return selectedPad
 
